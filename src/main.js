@@ -7,6 +7,8 @@ import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import * as dat from 'dat.gui';
+import GLTFMeshGpuInstancingExtension from 'three-gltf-extensions/loaders/EXT_mesh_gpu_instancing/EXT_mesh_gpu_instancing.js';
+import GLTFMaterialsVariantsExtension from 'three-gltf-extensions/loaders/KHR_materials_variants/KHR_materials_variants.js';
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xffffff);
@@ -40,6 +42,9 @@ dracoLoader.setDecoderPath('/draco/');
 
 loader.setDRACOLoader(dracoLoader);
 loader.setKTX2Loader(ktx2Loader);
+
+loader.register((parser) => new GLTFMaterialsVariantsExtension(parser));
+loader.register((parser) => new GLTFMeshGpuInstancingExtension(parser));
 
 let currentMaterialVariant = 0;
 
@@ -83,7 +88,7 @@ loader.load('src/Sofa.glb', (gltf) => {
   const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8); // Directional light
   directionalLight.position.set(5, 5, 5);
   scene.add(directionalLight);
-  
+
 });
 
 camera.position.z = 5;
