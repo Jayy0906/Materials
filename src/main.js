@@ -7,23 +7,19 @@ import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import * as dat from "dat.gui";
-import GLTFMeshGpuInstancingExtension from "three-gltf-extensions/loaders/EXT_mesh_gpu_instancing/EXT_mesh_gpu_instancing.js";
-import GLTFMaterialsVariantsExtension from "three-gltf-extensions/loaders/KHR_materials_variants/KHR_materials_variants.js";
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xffffff);
+
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
   1000
 );
-const renderer = new THREE.WebGLRenderer({ antialias: false });
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 0.25;
+camera.position.set(5, 5, 5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth * 0.8, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
@@ -36,7 +32,6 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.maxPolarAngle = Math.PI / 2;
 
-const loader = new GLTFLoader();
 const textureLoader = new TextureLoader();
 const dracoLoader = new DRACOLoader();
 const ktx2Loader = new KTX2Loader();
@@ -46,79 +41,111 @@ ktx2Loader.detectSupport(renderer);
 
 dracoLoader.setDecoderPath("/draco/");
 
-loader.setDRACOLoader(dracoLoader);
-loader.setKTX2Loader(ktx2Loader);
-
-loader.register((parser) => new GLTFMaterialsVariantsExtension(parser));
-loader.register((parser) => new GLTFMeshGpuInstancingExtension(parser));
-
-let currentMaterialVariant = 0;
-
-// While loading, set a different pixel ratio
-renderer.setPixelRatio(1);
-composer.setSize(window.innerWidth * 0.75, window.innerHeight);
-
 const jsonContent = {
-  materials: [
+  models: [
     {
-      name: "material1",
-      albedoMap: "src/albedoMap1.jpg",
-      normalMap: "src/normalMap1.jpg",
-      roughnessMap: "src/roughnessMap1.jpg",
+      name: "Sofa",
+      glbPath: "src/Sofa.glb",
+      materials: [
+        {
+          name: "material1",
+          albedoMap: "src/albedoMap1.jpg",
+          normalMap: "src/normalMap1.jpg",
+          roughnessMap: "src/roughnessMap1.jpg",
+        },
+        {
+          name: "material2",
+          albedoMap: "src/albedoMap2.jpg",
+          normalMap: "src/normalMap2.jpg",
+          roughnessMap: "src/roughnessMap2.jpg",
+        },
+      ],
+    },
+
+    {
+      name: "Floor",
+      glbPath: "src/Floor.glb",
+      materials: [
+        {
+          name: "material1",
+          albedoMap: "src/albedoMap1.jpg",
+          normalMap: "src/normalMap1.jpg",
+          roughnessMap: "src/roughnessMap1.jpg",
+        },
+        {
+          name: "material2",
+          albedoMap: "src/albedoMap2.jpg",
+          normalMap: "src/normalMap2.jpg",
+          roughnessMap: "src/roughnessMap2.jpg",
+        },
+      ],
     },
     {
-      name: "material2",
-      albedoMap: "src/albedoMap2.jpg",
-      normalMap: "src/normalMap2.jpg",
-      roughnessMap: "src/roughnessMap2.jpg",
+      name: "Wall",
+      glbPath: "src/Wall.glb",
+      materials: [
+        {
+          name: "material1",
+          albedoMap: "src/albedoMap1.jpg",
+          normalMap: "src/normalMap1.jpg",
+          roughnessMap: "src/roughnessMap1.jpg",
+        },
+        {
+          name: "material2",
+          albedoMap: "src/albedoMap2.jpg",
+          normalMap: "src/normalMap2.jpg",
+          roughnessMap: "src/roughnessMap2.jpg",
+        },
+      ],
     },
+    // Add more models here...
+    // {
+    //   name: "AnotherModel",
+    //   glbPath: "src/AnotherModel.glb",
+    //   materials: [
+    //     // Material variants for AnotherModel
+    //   ],
+    // },
   ],
 };
 
-const materialVariants = jsonContent.materials.map((material) => material.name);
+// Load models
+jsonContent.models.forEach((model) => {
+  const loader = new GLTFLoader();
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath("/draco/");
+  loader.setDRACOLoader(dracoLoader);
 
-loader.load("src/Sofa.glb", (gltf) => {
-  const materialSwitcher = {
-    materialVariant: materialVariants[currentMaterialVariant],
-  };
+  const ktx2Loader = new KTX2Loader();
+  ktx2Loader.setTranscoderPath("/basis/");
+  ktx2Loader.detectSupport(renderer);
+  loader.setKTX2Loader(ktx2Loader);
 
-  const gui = new dat.GUI();
-  gui
-    .add(materialSwitcher, "materialVariant", materialVariants)
-    .onChange((value) => {
-      currentMaterialVariant = materialVariants.indexOf(value);
-      applyMaterialVariant(
-        gltf.scene,
-        jsonContent.materials[currentMaterialVariant]
-      );
-    });
+  loader.load(model.glbPath, (gltf) => {
+    const materialSwitcher = {
+      materialVariant: model.materials[0].name,
+    };
 
-  applyMaterialVariant(
-    gltf.scene,
-    jsonContent.materials[currentMaterialVariant]
-  );
-  scene.add(gltf.scene);
+    const gui = new dat.GUI();
+    gui
+      .add(
+        materialSwitcher,
+        "materialVariant",
+        model.materials.map((m) => m.name)
+      )
+      .onChange((value) => {
+        const currentMaterialVariant = model.materials.find(
+          (m) => m.name === value
+        );
+        applyMaterialVariant(gltf.scene, currentMaterialVariant);
+      });
 
-  // Add lights to the scene
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Ambient light
-  scene.add(ambientLight);
+    applyMaterialVariant(gltf.scene, model.materials[0]);
+    scene.add(gltf.scene);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8); // Directional light
-  directionalLight.position.set(10, 5, 10);
-  directionalLight.castShadow = true;
-
-  scene.add(directionalLight);
+    // Additional setup for each loaded model...
+  });
 });
-
-camera.position.z = 5;
-
-const animate = function () {
-  requestAnimationFrame(animate);
-  controls.update();
-  composer.render();
-};
-
-animate();
 
 window.addEventListener("resize", () => {
   const newWidth = window.innerWidth;
@@ -147,7 +174,7 @@ function applyMaterialVariant(scene, materialEntry) {
               material.needsUpdate = true;
             });
           } else {
-            material.map = null; // Reset the map if not provided
+            material.map = null;
             material.needsUpdate = true;
           }
 
@@ -157,7 +184,7 @@ function applyMaterialVariant(scene, materialEntry) {
               material.needsUpdate = true;
             });
           } else {
-            material.normalMap = null; // Reset the normal map if not provided
+            material.normalMap = null;
             material.needsUpdate = true;
           }
 
@@ -167,7 +194,7 @@ function applyMaterialVariant(scene, materialEntry) {
               material.needsUpdate = true;
             });
           } else {
-            material.roughnessMap = null; // Reset the roughness map if not provided
+            material.roughnessMap = null;
             material.needsUpdate = true;
           }
         }
@@ -175,3 +202,39 @@ function applyMaterialVariant(scene, materialEntry) {
     }
   });
 }
+
+// Add lights to the scene
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight.position.set(5, 10, 5);
+directionalLight.castShadow = true;
+scene.add(directionalLight);
+
+// Set up shadow properties for the directional light
+directionalLight.shadow.mapSize.width = 1024;
+directionalLight.shadow.mapSize.height = 1024;
+directionalLight.shadow.camera.near = 0.1;
+directionalLight.shadow.camera.far = 50;
+directionalLight.shadow.camera.left = -10;
+directionalLight.shadow.camera.right = 10;
+directionalLight.shadow.camera.top = 10;
+directionalLight.shadow.camera.bottom = -10;
+
+// Ground plane
+const groundGeometry = new THREE.PlaneGeometry(20, 20);
+const groundMaterial = new THREE.ShadowMaterial({ opacity: 0.5 });
+const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  composer.render();
+}
+
+animate();
