@@ -1,17 +1,16 @@
 {
-    "materials": [
-      {
-        "name": "material1",
-        "albedoMap": "src/albedoMap1.jpg",
-        "normalMap": "src/normalMap1.jpg",
-        "roughnessMap": "src/roughnessMap1.jpg"
-      },
-      {
-        "name": "material2",
-        "albedoMap": "src/albedoMap2.jpg",
-        "normalMap": "src/normalMap2.jpg",
-        "roughnessMap": "src/roughnessMap2.jpg"
-      }
-    ]
-  }
-  
+  "materials": [
+    {
+      "name": "material1",
+      "albedoMap": "src/albedoMap1.jpg",
+      "normalMap": "src/normalMap1.jpg",
+      "roughnessMap": "src/roughnessMap1.jpg"
+    },
+    {
+      "name": "material2",
+      "albedoMap": "src/albedoMap2.jpg",
+      "normalMap": "src/normalMap2.jpg",
+      "roughnessMap": "src/roughnessMap2.jpg"
+    }
+  ]
+}

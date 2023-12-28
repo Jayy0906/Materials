@@ -1,80 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Material3D @ VisCommerce</title>
-  <link rel="stylesheet" href="src/style.css">
-  <script src="src/main.ts" defer type="module"></script>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
 </head>
-
 <body>
-  <div id="ui-container">
-
-    <!-- <div class="spinner-container">
-      <div class="spinner"></div>
-    </div> -->
-
-    <!-- Add a switch for day and night light -->
-    <label class="switch" id="dayNightToggle">
-      <input type="checkbox" unchecked>
-      <span class="slider round"></span>
-    </label>
-
-    <!-- <button class="accordion accordion-button" id="dayNightToggle">Day ☀️/ Night 🌑</button> -->
-
-    <div class="accordion">
-      <button class="accordion-button" data-target="Leather" onclick="toggleAccordion('Leather')">Leather</button>
-      <div class="accordion-content" id="Leather">
-        <div class="button-container">
-          <button class="button">
-            <img src="/Thumbnails/Compressed/Leather1.png" data-model="Sofa" data-variant='Brown_Leather'
-              alt="Leather 1">
-            <p class="image-name">Brown</p>
-          </button>
-          <button class="button">
-            <img src="/Thumbnails/Compressed/Leather2.png" data-model="Sofa" data-variant='Blue_Leather'
-              alt="Leather 2">
-            <p class="image-name">Blue</p>
-          </button>
-          <button class="button">
-            <img src="/Thumbnails/Compressed/Leather3.png" data-model="Sofa" data-variant='Pattern_Leather'
-              alt="Leather 3">
-            <p class="image-name">Pattern</p>
-          </button>
-          <button class="button">
-            <img src="/Thumbnails/Compressed/Leather4.png" data-model="Sofa" data-variant='Orange_Leather'
-              alt="Leather 4">
-            <p class="image-name">Orange</p>
-          </button>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <div id="canvas-container"></div>
-
-  <!-- <script type="module" src="bundle.js"></script> -->
-
-  <script>
-    // Function to toggle accordion content
-    function toggleAccordion(accordionId) {
-      const accordionContent = document.getElementById(accordionId);
-      accordionContent.style.display = (accordionContent.style.display === 'block') ? 'none' : 'block';
-
-      const accordionButton = document.querySelector(`.accordion-button[data-target="${accordionId}"]`);
-      accordionButton.classList.toggle('active');
-    }
-
-    // Function to toggle day and night light
-    //  function toggleDayNight() {
-    //   const canvasContainer = document.getElementById('canvas-container');
-    //   canvasContainer.dispatchEvent(new CustomEvent('toggleDayNight'));
-    // }
-
-  </script>
+  <script src="src/main.js" defer type="module"></script>
 </body>
-
 </html>
