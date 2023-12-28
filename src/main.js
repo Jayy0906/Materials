@@ -1,18 +1,23 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { TextureLoader } from 'three/src/loaders/TextureLoader';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
-import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import * as dat from 'dat.gui';
-import GLTFMeshGpuInstancingExtension from 'three-gltf-extensions/loaders/EXT_mesh_gpu_instancing/EXT_mesh_gpu_instancing.js';
-import GLTFMaterialsVariantsExtension from 'three-gltf-extensions/loaders/KHR_materials_variants/KHR_materials_variants.js';
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { TextureLoader } from "three/src/loaders/TextureLoader";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
+import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import * as dat from "dat.gui";
+import GLTFMeshGpuInstancingExtension from "three-gltf-extensions/loaders/EXT_mesh_gpu_instancing/EXT_mesh_gpu_instancing.js";
+import GLTFMaterialsVariantsExtension from "three-gltf-extensions/loaders/KHR_materials_variants/KHR_materials_variants.js";
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xffffff);
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
 const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -29,16 +34,17 @@ composer.addPass(renderPass);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
+controls.maxPolarAngle = Math.PI / 2;
 
 const loader = new GLTFLoader();
 const textureLoader = new TextureLoader();
 const dracoLoader = new DRACOLoader();
 const ktx2Loader = new KTX2Loader();
 
-ktx2Loader.setTranscoderPath('/basis/');
+ktx2Loader.setTranscoderPath("/basis/");
 ktx2Loader.detectSupport(renderer);
 
-dracoLoader.setDecoderPath('/draco/');
+dracoLoader.setDecoderPath("/draco/");
 
 loader.setDRACOLoader(dracoLoader);
 loader.setKTX2Loader(ktx2Loader);
@@ -48,47 +54,60 @@ loader.register((parser) => new GLTFMeshGpuInstancingExtension(parser));
 
 let currentMaterialVariant = 0;
 
+// While loading, set a different pixel ratio
+renderer.setPixelRatio(1);
+composer.setSize(window.innerWidth * 0.75, window.innerHeight);
+
 const jsonContent = {
-  "materials": [
+  materials: [
     {
-      "name": "material1",
-      "albedoMap": "src/albedoMap1.jpg",
-      "normalMap": "src/normalMap1.jpg",
-      "roughnessMap": "src/roughnessMap1.jpg"
+      name: "material1",
+      albedoMap: "src/albedoMap1.jpg",
+      normalMap: "src/normalMap1.jpg",
+      roughnessMap: "src/roughnessMap1.jpg",
     },
     {
-      "name": "material2",
-      "albedoMap": "src/albedoMap2.jpg",
-      "normalMap": "src/normalMap2.jpg",
-      "roughnessMap": "src/roughnessMap2.jpg"
-    }
-  ]
+      name: "material2",
+      albedoMap: "src/albedoMap2.jpg",
+      normalMap: "src/normalMap2.jpg",
+      roughnessMap: "src/roughnessMap2.jpg",
+    },
+  ],
 };
 
 const materialVariants = jsonContent.materials.map((material) => material.name);
 
-loader.load('src/Sofa.glb', (gltf) => {
+loader.load("src/Sofa.glb", (gltf) => {
   const materialSwitcher = {
     materialVariant: materialVariants[currentMaterialVariant],
   };
 
   const gui = new dat.GUI();
-  gui.add(materialSwitcher, 'materialVariant', materialVariants).onChange((value) => {
-    currentMaterialVariant = materialVariants.indexOf(value);
-    applyMaterialVariant(gltf.scene, jsonContent.materials[currentMaterialVariant]);
-  });
+  gui
+    .add(materialSwitcher, "materialVariant", materialVariants)
+    .onChange((value) => {
+      currentMaterialVariant = materialVariants.indexOf(value);
+      applyMaterialVariant(
+        gltf.scene,
+        jsonContent.materials[currentMaterialVariant]
+      );
+    });
 
-  applyMaterialVariant(gltf.scene, jsonContent.materials[currentMaterialVariant]);
+  applyMaterialVariant(
+    gltf.scene,
+    jsonContent.materials[currentMaterialVariant]
+  );
   scene.add(gltf.scene);
 
   // Add lights to the scene
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.3); // Ambient light
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Ambient light
   scene.add(ambientLight);
 
   const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8); // Directional light
-  directionalLight.position.set(5, 5, 5);
-  scene.add(directionalLight);
+  directionalLight.position.set(10, 5, 10);
+  directionalLight.castShadow = true;
 
+  scene.add(directionalLight);
 });
 
 camera.position.z = 5;
@@ -101,7 +120,7 @@ const animate = function () {
 
 animate();
 
-window.addEventListener('resize', () => {
+window.addEventListener("resize", () => {
   const newWidth = window.innerWidth;
   const newHeight = window.innerHeight;
 
@@ -116,7 +135,9 @@ function applyMaterialVariant(scene, materialEntry) {
     if (child.isMesh) {
       const mesh = child;
 
-      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      const materials = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
 
       for (const material of materials) {
         if (material instanceof THREE.MeshStandardMaterial) {
