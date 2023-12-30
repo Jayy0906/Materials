@@ -1,4 +1,5 @@
 import {
+	HalfFloatType,
 	MeshBasicMaterial,
 	NearestFilter,
 	ShaderMaterial,
@@ -14,8 +15,6 @@ class AfterimagePass extends Pass {
 
 		super();
 
-		if ( AfterimageShader === undefined ) console.error( 'THREE.AfterimagePass relies on AfterimageShader' );
-
 		this.shader = AfterimageShader;
 
 		this.uniforms = UniformsUtils.clone( this.shader.uniforms );
@@ -24,10 +23,12 @@ class AfterimagePass extends Pass {
 
 		this.textureComp = new WebGLRenderTarget( window.innerWidth, window.innerHeight, {
 			magFilter: NearestFilter,
+			type: HalfFloatType
 		} );
 
 		this.textureOld = new WebGLRenderTarget( window.innerWidth, window.innerHeight, {
 			magFilter: NearestFilter,
+			type: HalfFloatType
 		} );
 
 		this.compFsMaterial = new ShaderMaterial( {
