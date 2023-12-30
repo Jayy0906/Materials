@@ -77,7 +77,7 @@ function createMaterialFromJSON(jsonData) {
 }
 
 // Fetch the JSON file
-fetch("src/MaterialData/MaterialData.json")
+fetch("MaterialData/MaterialData.json")
   .then((response) => response.json())
   .then((data) => {
     const jsonFiles = data;
@@ -112,7 +112,7 @@ fetch("src/MaterialData/MaterialData.json")
 
     loader.setDRACOLoader(dracoLoader); // Set DRACOLoader to GLTFLoader
 
-    loader.load("src/Sofa1.glb", (gltf) => {
+    loader.load("models/Sofa1.glb", (gltf) => {
       // Store the loaded model
       loadedModel = gltf.scene;
 
@@ -135,7 +135,7 @@ fetch("src/MaterialData/MaterialData.json")
     // Function to add HDRI
     function setupHDRI() {
       const rgbeloader = new RGBELoader();
-      rgbeloader.load("src/gem_2.hdr", (hdri) => {
+      rgbeloader.load("hdri/gem_2.hdr", (hdri) => {
         const myhdr = hdri;
         myhdr.mapping = THREE.EquirectangularReflectionMapping;
         scene.environment = myhdr;
