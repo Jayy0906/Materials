@@ -9,7 +9,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { SSAOPass } from "three/examples/jsm/postprocessing/SSAOPass.js";
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000); // Set 3D scene's background color to white
+scene.background = new THREE.Color(0xffffff); // Set 3D scene's background color to white
 const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.shadowMap.enabled = true;
