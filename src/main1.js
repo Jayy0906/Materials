@@ -1,22 +1,26 @@
 import * as THREE from "three";
-import * as dat from 'dat.gui';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import * as dat from "dat.gui";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { SSAOPass } from "three/examples/jsm/postprocessing/SSAOPass.js";
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+scene.background = new THREE.Color(0x000000); // Set 3D scene's background color to white
+const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.25;
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0xffffff); // Set the background color to white
 document.body.appendChild(renderer.domElement);
 
-const geometry = new THREE.BoxGeometry(1, 1, 1);
+let loadedModel; // Variable to store the loaded model
 
 // Orbit controls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -31,8 +35,21 @@ function createMaterialFromJSON(jsonData) {
   const glossMap = new THREE.TextureLoader().load(jsonData.glossMap);
   const normalMap = new THREE.TextureLoader().load(jsonData.normalMap);
 
+  // Set texture wrapping
+  diffuseMap.wrapS = THREE.RepeatWrapping;
+  diffuseMap.wrapT = THREE.RepeatWrapping;
+  glossMap.wrapS = THREE.RepeatWrapping;
+  glossMap.wrapT = THREE.RepeatWrapping;
+  normalMap.wrapS = THREE.RepeatWrapping;
+  normalMap.wrapT = THREE.RepeatWrapping;
+
+  // Set texture repeats
+  diffuseMap.repeat.set(...jsonData.diffuseMapTiling);
+  glossMap.repeat.set(...jsonData.glossMapTiling);
+  normalMap.repeat.set(...jsonData.normalMapTiling);
+
   // Create material
-  const material = new THREE.MeshStandardMaterial({
+  const material = new THREE.MeshPhysicalMaterial({
     metalness: jsonData.metalness,
     roughness: 1 - jsonData.sheenGloss,
     opacity: jsonData.opacity,
@@ -40,9 +57,6 @@ function createMaterialFromJSON(jsonData) {
     map: diffuseMap,
     roughnessMap: glossMap,
     normalMap: normalMap,
-    mapRepeat: new THREE.Vector2(...jsonData.diffuseMapTiling),
-    roughnessMapRepeat: new THREE.Vector2(...jsonData.glossMapTiling),
-    normalMapRepeat: new THREE.Vector2(...jsonData.normalMapTiling),
     side: jsonData.twoSidedLighting ? THREE.DoubleSide : THREE.FrontSide,
     alphaTest: jsonData.alphaTest,
     depthWrite: jsonData.depthWrite,
@@ -54,6 +68,11 @@ function createMaterialFromJSON(jsonData) {
     aoMapIntensity: 1,
   });
 
+  // Additional parameters for a more realistic look
+  material.clearcoat = jsonData.clearcoat || 0; // Clearcoat intensity
+  material.clearcoatRoughness = jsonData.clearcoatRoughness || 0; // Clearcoat roughness
+  material.reflectivity = jsonData.reflectivity || 0.5; // Reflectivity
+
   return material;
 }
 
@@ -61,58 +80,103 @@ function createMaterialFromJSON(jsonData) {
 fetch("src/MaterialData/MaterialData.json")
   .then((response) => response.json())
   .then((data) => {
-    // Assign the loaded JSON data to the variable
     const jsonFiles = data;
 
-    // User selects a material
-    const selectedMaterial = "material1"; // Replace with user input or dynamic selection
-    let selectedJsonData = jsonFiles[selectedMaterial];
-
-    // Create GUI
     const gui = new dat.GUI();
-
-    // Define an object to hold the material parameters
     const materialParameters = {
       selectedMaterial: "material1",
     };
 
-    // Create cube with the selected material
-    const cube = new THREE.Mesh(geometry, createMaterialFromJSON(selectedJsonData));
-    scene.add(cube);
+    gui
+      .add(materialParameters, "selectedMaterial", Object.keys(jsonFiles))
+      .onChange(function (value) {
+        const selectedJsonData = jsonFiles[value];
+        const newMaterial = createMaterialFromJSON(selectedJsonData);
 
-    // Add material selection to the GUI
-    gui.add(materialParameters, 'selectedMaterial', Object.keys(jsonFiles))
-  .onChange(function(value) {
-    // Update selectedJsonData based on user selection
-    selectedJsonData = jsonFiles[value];
+        // Update materials of the loaded model
+        if (loadedModel) {
+          loadedModel.traverse((node) => {
+            if (node.isMesh) {
+              node.material = newMaterial;
+            }
+          });
+        }
+      });
 
-    // Create material based on the new selection
-    const newMaterial = createMaterialFromJSON(selectedJsonData);
+    // Load GLB model
+    const loader = new GLTFLoader();
+    const dracoLoader = new DRACOLoader(); // Create an instance of DRACOLoader
+    dracoLoader.setDecoderPath(
+      "https://www.gstatic.com/draco/versioned/decoders/1.4.2/"
+    ); // Set the path to the Draco decoder
 
-    // Update cube material
-    cube.material = newMaterial;
-  });
+    loader.setDRACOLoader(dracoLoader); // Set DRACOLoader to GLTFLoader
+
+    loader.load("src/Sofa1.glb", (gltf) => {
+      // Store the loaded model
+      loadedModel = gltf.scene;
+
+      // Set initial material
+      const initialMaterial = createMaterialFromJSON(
+        jsonFiles[materialParameters.selectedMaterial]
+      );
+      loadedModel.traverse((node) => {
+        if (node.isMesh) {
+          node.material = initialMaterial;
+        }
+      });
+
+      // Add the loaded model to the scene
+      scene.add(loadedModel);
+    });
 
     camera.position.z = 5;
 
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Intensity can be adjusted
+    // Function to add HDRI
+    function setupHDRI() {
+      const rgbeloader = new RGBELoader();
+      rgbeloader.load("src/gem_2.hdr", (hdri) => {
+        const myhdr = hdri;
+        myhdr.mapping = THREE.EquirectangularReflectionMapping;
+        scene.environment = myhdr;
+        // scene.background = new THREE.Color("#000");
+      });
+    }
+
+    setupHDRI();
+
+    //Anti Aliasing
+    const composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    // SSAO pass
+    const ssaoPass = new SSAOPass(
+      scene,
+      camera,
+      window.innerWidth,
+      window.innerHeight
+    );
+    ssaoPass.kernelRadius = 16;
+    ssaoPass.minDistance = 0.01;
+    ssaoPass.maxDistance = 0.05;
+    composer.addPass(ssaoPass);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    // Directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // Intensity can be adjusted
-    directionalLight.position.set(5, 5, 5); // Set the direction of the light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5);
     scene.add(directionalLight);
 
     function animate() {
       requestAnimationFrame(animate);
-
-      controls.update(); // Update controls in the animation loop
-
+      controls.update();
       renderer.render(scene, camera);
+
+      composer.render();
     }
 
-    // Start animation
     animate();
   })
   .catch((error) => console.error("Error loading JSON file:", error));
