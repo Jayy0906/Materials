@@ -31,7 +31,7 @@
     "specularityFactor": 1,
     "refractionIndex": 0.666667,
     "refraction": 0,
-    "sheenGloss": 0.5,
+    "sheenGloss": 0,
     "thickness": 0,
     "attenuationDistance": 0,
     "emissiveIntensity": 1,
@@ -185,8 +185,8 @@
     "useGammaTonemap": true,
     "mapping_format": "path"
   },
-  "Brown leather": {
-    "name": "Brown leather",
+  "Full Grain Brown leather": {
+    "name": "Full Grain Brown leather",
     "shader": "pbr",
     "blendType": 3,
     "cull": 0,
