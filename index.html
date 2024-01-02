@@ -1,14 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Material3D @ VisCommerce</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js"></script>
 </head>
+
 <body>
+  <div class="right-container">
+
+    <h2>Material Selection</h2>
+    <select id="material-selector"></select>
+    <button id="apply-material-btn">Apply Material</button>
+
+  </div>
+  <div class="canvas-container" id="left-container"></div>
   <!-- <button id="switchButton">Switch</button> -->
   <script src="src/main.js" defer type="module"></script>
 </body>
+
 </html>
