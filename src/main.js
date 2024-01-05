@@ -1,35 +1,53 @@
-import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
-import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
-import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
-import { SSAOPass } from "three/examples/jsm/postprocessing/SSAOPass.js";
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+import Stats from 'three/examples/jsm/libs/stats.module';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js';
+// import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
+// import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
+// import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader';
+import { SubsurfaceScatteringShader } from 'three/examples/jsm/shaders/SubsurfaceScatteringShader';
+import { RepeatWrapping, ShaderMaterial, TextureLoader, UniformsUtils, Vector3, DoubleSide } from 'three';
+
+//@ts-ignore
+import GLTFMeshGpuInstancingExtension from 'three-gltf-extensions/loaders/EXT_mesh_gpu_instancing/EXT_mesh_gpu_instancing.js';
+//@ts-ignore
+import GLTFMaterialsVariantsExtension from 'three-gltf-extensions/loaders/KHR_materials_variants/KHR_materials_variants.js';
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xffffff);
-const camera = new THREE.PerspectiveCamera(
-  40,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
+scene.background = new THREE.Color(0xffffff); // Set 3D scene's background color to white
+const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.25;
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(window.innerWidth * 0.8, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+
+//Anti Aliasing
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+// SSAO pass
+const ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+ssaoPass.kernelRadius = 16;
+ssaoPass.minDistance = 0.01;
+ssaoPass.maxDistance = 0.05;
+composer.addPass(ssaoPass);
 
 let loadedModel;
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.25;
-controls.screenSpacePanning = false;
+controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+controls.dampingFactor = 0.05;
+// controls.screenSpacePanning = false;
 controls.maxPolarAngle = Math.PI / 2;
 
 function createMaterialFromJSON(jsonData) {
@@ -90,14 +108,38 @@ fetch("MaterialData/SofaMaterials.json")
       materialSelector.add(option);
     });
 
+    let loadedSofa; // Variable to store the loaded Sofa model
+    const originalMaterials = new Map(); // Map to store original materials by node name
+
+    // ... (your existing code)
+
+    function storeOriginalMaterials(model) {
+      model.traverse((node) => {
+        if (node.isMesh) {
+          originalMaterials.set(node.name, node.material.clone());
+        }
+      });
+    }
+
     applyMaterialBtn.addEventListener("click", () => {
       const selectedJsonData = jsonFiles[materialSelector.value];
       const newMaterial = createMaterialFromJSON(selectedJsonData);
-
-      if (loadedModel) {
-        loadedModel.traverse((node) => {
+    
+      if (loadedSofa) {
+        loadedSofa.traverse((node) => {
           if (node.isMesh) {
-            node.material = newMaterial;
+            const originalMaterial = originalMaterials.get(node.uuid);
+    
+            // Check if the node is not "Wood frame.001"
+            if (node.name !== "Cube.008.0") {
+              // Check if the node has an original material stored
+              if (originalMaterial) {
+                node.material.copy(originalMaterial);
+              } else {
+                // If no original material is stored, apply the new material
+                node.material = newMaterial.clone();
+              }
+            }
           }
         });
       }
@@ -105,15 +147,15 @@ fetch("MaterialData/SofaMaterials.json")
 
     const modelPaths = [
       "models/Sofa.glb",
-    //   "models/Wall.glb",
-    //   "models/Floor.glb",
-    //   "models/Frame.glb",
-    //   "models/Plant.glb",
-    //   "models/Coffee_Table.glb",
-    //   "models/Accessories.glb",
-    //   "models/Floor_Lamp.glb",
-    //   "models/Window.glb",
-    //   "models/Carpet.glb",
+      "models/Wall.glb",
+      "models/Floor.glb",
+      "models/Frame.glb",
+      "models/Plant.glb",
+      "models/Coffee_Table.glb",
+      "models/Accessories.glb",
+      "models/Floor_Lamp.glb",
+      "models/Window.glb",
+      "models/Carpet.glb",
     ];
 
     let currentModelIndex = 0;
@@ -123,29 +165,25 @@ fetch("MaterialData/SofaMaterials.json")
         const loader = new GLTFLoader();
         const dracoLoader = new DRACOLoader();
         const ktx2Loader = new KTX2Loader();
-
+    
         ktx2Loader.setTranscoderPath("/basis/");
         ktx2Loader.detectSupport(renderer);
-
+    
         dracoLoader.setDecoderPath(
           "https://www.gstatic.com/draco/versioned/decoders/1.4.2/"
         );
-
+    
         loader.setDRACOLoader(dracoLoader);
         loader.setKTX2Loader(ktx2Loader);
-
+    
         loader.load(modelPaths[currentModelIndex], (gltf) => {
-          loadedModel = gltf.scene;
-
-          const initialMaterial = createMaterialFromJSON(
-            jsonFiles[materialSelector.value]
-          );
-
-          loadedModel.traverse((node) => {
-            if (node.isMesh) {
-              node.material = initialMaterial;
-            }
-          });
+          const loadedModel = gltf.scene;
+    
+          if (modelPaths[currentModelIndex] === "models/Sofa.glb") {
+            // Store the loaded Sofa model for later use
+            loadedSofa = loadedModel;
+            storeOriginalMaterials(loadedSofa);
+          }
 
           scene.add(loadedModel);
 
