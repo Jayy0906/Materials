@@ -15,7 +15,7 @@ body {
 }
 
 #ui-container {
-  width: 30%;
+  width: 20%;
   height: 100%;
   background-color: #f5f5f5;
   color: #fff;
@@ -136,7 +136,6 @@ body {
   justify-content: center;
   align-items: center;
 }
-
 /* Spinner animation */
 .spinner {
   border: 12px solid #f3f3f3;
@@ -164,8 +163,8 @@ body {
   width: 60px;
   height: 34px;
   padding: auto;
-  bottom: 94.2%;
-  left: 75.5%;
+  bottom: 91%;
+  left: 75%;
 }
 
 .switch input {

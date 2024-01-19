@@ -8,6 +8,20 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { SSAOPass } from "three/examples/jsm/postprocessing/SSAOPass.js";
 import CustomRayCaster from "./raycaster";
+import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
+import { SubsurfaceScatteringShader } from "three/examples/jsm/shaders/SubsurfaceScatteringShader";
+import {
+  RepeatWrapping,
+  ShaderMaterial,
+  TextureLoader,
+  UniformsUtils,
+  Vector3,
+  DoubleSide,
+} from "three";
+
+// const progressContainer = document.querySelector('.spinner-container') as HTMLElement;
+const specificObjectToggleCheckbox = document.getElementById('specificObjectToggle');
+let specificObject;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xffffff); // Set 3D scene's background color to white
@@ -20,18 +34,26 @@ const camera = new THREE.PerspectiveCamera(
 const renderer = new THREE.WebGLRenderer({ antialias: false });
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.25;
 renderer.setSize(window.innerWidth * 0.8, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
 // Append the renderer's DOM element to the canvas-container
-const canvasContainer = document.getElementById("canvas-container");
-canvasContainer.appendChild(renderer.domElement);
+// const canvasContainer = document.getElementById("canvas-container");
+// canvasContainer.appendChild(renderer.domElement);
 //Anti Aliasing
 const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
+
+// Replace the FXAA pass with SMAA pass
+const smaaPass = new SMAAPass(
+  window.innerWidth * renderer.getPixelRatio(),
+  window.innerHeight * renderer.getPixelRatio()
+);
+composer.addPass(smaaPass);
 
 // SSAO pass
 const ssaoPass = new SSAOPass(
@@ -93,6 +115,82 @@ function createMaterialFromJSON(jsonData) {
   material.reflectivity = jsonData.reflectivity || 0.5;
 
   return material;
+}
+
+function createSubsurfaceMaterial() {
+  const texLoader = new TextureLoader();
+  const subTexture = texLoader.load("./textures/subTexture.png");
+  subTexture.wrapS = subTexture.wrapT = RepeatWrapping;
+  subTexture.repeat.set(4, 4);
+
+  const shader = SubsurfaceScatteringShader;
+  const uniforms = UniformsUtils.clone(shader.uniforms);
+
+  // Adjust the color to a more neutral tone
+  uniforms.diffuse.value = new Vector3(0.9, 0.7, 0.5);
+  uniforms.shininess.value = 10;
+
+  uniforms.thicknessMap.value = subTexture;
+  uniforms.thicknessColor.value = new Vector3(
+    0.5607843137254902,
+    0.26666666666666666,
+    0.054901960784313725
+  );
+  uniforms.thicknessDistortion.value = 0.1;
+  uniforms.thicknessAmbient.value = 0.4;
+  uniforms.thicknessAttenuation.value = 0.7;
+  uniforms.thicknessPower.value = 10.0;
+  uniforms.thicknessScale.value = 1;
+
+  const subMaterial = new ShaderMaterial({
+    uniforms,
+    vertexShader: shader.vertexShader,
+    fragmentShader: shader.fragmentShader,
+    lights: true,
+  });
+
+  subMaterial.side = DoubleSide; // Render on both sides of the geometry
+
+  return subMaterial;
+}
+
+// Example: Replace material of 'FloorLamp_Cover' with subsurface scattering material
+const subsurfaceScatteringMaterial = createSubsurfaceMaterial();
+
+// Ensure that specificObject is defined before replacing its material
+if (specificObject) {
+  replaceMaterial(
+    specificObject,
+    "FloorLamp_Cover",
+    subsurfaceScatteringMaterial
+  );
+}
+
+if (specificObjectToggleCheckbox) {
+  specificObjectToggleCheckbox.addEventListener('change', () => {
+    const isActivated = specificObjectToggleCheckbox.checked;
+
+    // Toggle visibility of the specific object based on the checkbox state
+    if (specificObject) {
+      specificObject.visible = isActivated;
+    }
+  });
+} else {
+  // console.error("Element with id 'specificObjectToggle' not found.");
+}
+
+function replaceMaterial(model, materialName, newMaterial) {
+  model.traverse((child) => {
+    if (child.isMesh) {
+      const mesh = child;
+
+      // Check if the mesh name matches the specified materialName
+      if (mesh.name === materialName) {
+        // console.log(`Replacing material for ${materialName}`);
+        mesh.material = newMaterial;
+      }
+    }
+  });
 }
 
 function processJsonData() {
@@ -213,10 +311,45 @@ function processJsonData() {
           loader.load(modelPaths[currentModelIndex], (gltf) => {
             const loadedModel = gltf.scene;
 
+            if (modelPaths[currentModelIndex] === "models/Carpet.glb") {
+              specificObject = gltf.scene; // Store the specific object
+            }
+            
+            // Example: Replace material of 'FloorLamp_Cover' with subsurface scattering material
+            if (modelPaths[currentModelIndex] === "models/Floor_Lamp.glb") {
+              console.log("Replacing material for Floor Lamp");
+              const FloorLamp_Cover = "FloorLamp_Cover";
+              const newMaterial = createSubsurfaceMaterial(); // Or any other material creation logic
+              replaceMaterial(gltf.scene, FloorLamp_Cover, newMaterial);
+            }            
+
             if (modelPaths[currentModelIndex] === "models/Sofa.glb") {
               loadedSofa = loadedModel;
               storeOriginalMaterials(loadedSofa);
             }
+
+            gltf.scene.traverse(function (child) {
+              if (child.isMesh) {
+                const m = child;
+                m.receiveShadow = true;
+                m.castShadow = true;
+              }
+            
+              if (child.isLight) {
+                let l = child;
+                l.castShadow = true;
+                // l.intensity = 10; // Adjust the intensity value as needed
+                l.distance = 5;
+                l.decay = 4;
+                l.power = 400;
+                // l.position.z = -1;
+                l.shadow.bias = -0.005;
+                l.shadow.mapSize.width = 1024;
+                l.shadow.mapSize.height = 1024;
+                l.shadow.radius = 2.5;
+              }
+            });
+            
 
             scene.add(loadedModel);
             scene.position.set(0, -0.5, 0);
