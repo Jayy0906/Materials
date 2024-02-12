@@ -171,7 +171,8 @@ function loadModels(index: number) {
     progressContainer.style.display = 'none';
 
     // After loading is complete, set the desired pixel ratio
-    const finalPixelRatio = window.devicePixelRatio * scaleFactor;
+    const finalPixelRatio = window.devicePixelRatio;
+    // const finalPixelRatio = window.devicePixelRatio * scaleFactor;
     renderer.setPixelRatio(finalPixelRatio);
     composer.setSize(window.innerWidth * 0.75, window.innerHeight);
 
