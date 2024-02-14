@@ -19,8 +19,6 @@ import GLTFMeshGpuInstancingExtension from 'three-gltf-extensions/loaders/EXT_me
 //@ts-ignore
 import GLTFMaterialsVariantsExtension from 'three-gltf-extensions/loaders/KHR_materials_variants/KHR_materials_variants.js';
 
-
-
 const modelPaths = [
   'https://d2629xvaofl3d3.cloudfront.net/Wall.glb',
   'https://d2629xvaofl3d3.cloudfront.net/Floor.glb',
@@ -124,7 +122,6 @@ function setupHDRI() {
 }
 
 setupHDRI();
-
 
 //Changing Material variants
 const loadedModelsMap: any = {}
@@ -293,8 +290,6 @@ function createSubsurfaceMaterial() {
   return subMaterial;
 }
 
-
-
 function replaceMaterial(model: THREE.Object3D, materialName: string, newMaterial: THREE.Material) {
   model.traverse((child) => {
     if ((child as THREE.Mesh).isMesh) {
@@ -308,7 +303,6 @@ function replaceMaterial(model: THREE.Object3D, materialName: string, newMateria
     }
   });
 }
-
 
 // Example: Replace material of 'FloorLamp_Cover' with subsurface scattering material
 const subsurfaceScatteringMaterial = createSubsurfaceMaterial();

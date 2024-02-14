@@ -75,8 +75,7 @@
       <div class="accordion-content" id="Velvet">
         <div class="button-container">
           <button class="button">
-            <img src="/Thumbnails/Compressed/Red Velvet.png" data-model="Sofa" data-variant='Red_Velvet'
-              alt="Velvet 1">
+            <img src="/Thumbnails/Compressed/Red Velvet.png" data-model="Sofa" data-variant='Red_Velvet' alt="Velvet 1">
             <p class="image-name">Red</p>
           </button>
           <button class="button">
@@ -101,7 +100,8 @@
             <p class="image-name">Brass</p>
           </button>
           <button class="button">
-            <img src="/Thumbnails/Compressed/Wrought Iron.png" data-model="Coffee_Table" data-variant='Wrought_Iron' alt="wrought iron">
+            <img src="/Thumbnails/Compressed/Wrought Iron.png" data-model="Coffee_Table" data-variant='Wrought_Iron'
+              alt="wrought iron">
             <p class="image-name">Wrought Iron</p>
           </button>
           <button class="button">
@@ -158,7 +158,8 @@
     </div>
 
     <div class="accordion">
-      <button class="accordion-button" data-target="Wallpapers" onclick="toggleAccordion('Wallpapers')">Wallpapers</button>
+      <button class="accordion-button" data-target="Wallpapers"
+        onclick="toggleAccordion('Wallpapers')">Wallpapers</button>
       <div class="accordion-content" id="Wallpapers">
         <div class="button-container">
           <button class="button">
@@ -232,18 +233,12 @@
   <script>
     // Function to toggle accordion content
     function toggleAccordion(accordionId) {
-  const accordionContent = document.getElementById(accordionId);
-  accordionContent.style.display = (accordionContent.style.display === 'block') ? 'none' : 'block';
+      const accordionContent = document.getElementById(accordionId);
+      accordionContent.style.display = (accordionContent.style.display === 'block') ? 'none' : 'block';
 
-  const accordionButton = document.querySelector(`.accordion-button[data-target="${accordionId}"]`);
-  accordionButton.classList.toggle('active');
-}
-
-    // Function to toggle day and night light
-    //  function toggleDayNight() {
-    //   const canvasContainer = document.getElementById('canvas-container');
-    //   canvasContainer.dispatchEvent(new CustomEvent('toggleDayNight'));
-    // }
+      const accordionButton = document.querySelector(`.accordion-button[data-target="${accordionId}"]`);
+      accordionButton.classList.toggle('active');
+    }
 
   </script>
 </body>
